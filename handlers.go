@@ -23,6 +23,7 @@ type Server struct {
 	TLSCert          string
 	TLS              bool
 	NoAuth           bool
+	UserOwnFolder    bool
 	AppendOnly       bool
 	PrivateRepos     bool
 	Prometheus       bool
@@ -61,6 +62,10 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Perform the path parsing to determine the repo folder and remainder for the
 	// repo handler.
 	folderPath, remainder := splitURLPath(r.URL.Path, MaxFolderDepth)
+	if !s.NoAuth && s.UserOwnFolder {
+		folderPath = append(folderPath[:len(folderPath)-1], username, folderPath[len(folderPath)-1])
+	}
+
 	if !folderPathValid(folderPath) {
 		log.Printf("Invalid request path: %s", r.URL.Path)
 		httpDefaultError(w, http.StatusNotFound)
